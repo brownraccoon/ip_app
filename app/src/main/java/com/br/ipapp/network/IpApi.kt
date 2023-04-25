@@ -5,7 +5,7 @@ import retrofit2.Response
 import retrofit2.http.GET
 
 interface IpApi {
-    @GET
+    @GET()
     suspend fun getClientIpInfo(
     ): Response<IpResponse>
 }
