@@ -5,16 +5,17 @@ import okhttp3.Response
 
 class AuthInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        val req = chain.request()
+        var req = chain.request()
 
         try {
             val url = chain
                 .request()
                 .url
                 .newBuilder()
+                .addQueryParameter("key", "")
                 .build()
-            chain.proceed(chain.request().newBuilder().url(url).build())
-
+            req = req.newBuilder().url(url).build()
+            chain.proceed(req)
         } catch (ex: Exception) {
             throw Exception(ex)
         }

@@ -8,9 +8,7 @@ import javax.inject.Inject
 class IpRepositoryImpl @Inject constructor(private val ipApi: IpApi) : IpRepository {
     override suspend fun getIpData(): Resource<IpResponse> {
         return try {
-            var res = IpResponse()
-            res = ipApi.getClientIpInfo()
-            Resource.Success(data = res)
+            Resource.Success(data = ipApi.getClientIpInfo().body() ?: IpResponse())
         } catch (e: Exception) {
             Resource.Error(message = e.stackTrace.toString())
         }
