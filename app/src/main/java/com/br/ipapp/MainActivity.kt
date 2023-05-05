@@ -12,19 +12,27 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.br.ipapp.datastore.DataStoreManager
 import com.br.ipapp.ui.theme.Ip_appTheme
+import com.br.ipapp.util.Constant.API_KEY
 import com.br.ipapp.viewmodel.HomeViewModel
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.google.firebase.remoteconfig.ktx.remoteConfigSettings
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val viewModel: HomeViewModel by viewModels()
+
+    @Inject
+    lateinit var dataStore: DataStoreManager
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         getFirebaseRemoteConfig()
@@ -54,10 +62,12 @@ class MainActivity : ComponentActivity() {
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     val updated = task.result
+                    val key = remoteConfig.getString(API_KEY)
+                    lifecycleScope.launch { dataStore.saveKey(key) }
                     Timber.d("Config params updated: $updated")
                     Timber.d("Fetch and activate succeeded")
                 } else {
-                    Timber.d(      "Fetch failed")
+                    Timber.d("Fetch failed")
                 }
             }
     }
