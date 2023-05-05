@@ -1,14 +1,26 @@
 package com.br.ipapp.di
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import androidx.datastore.preferences.SharedPreferencesMigration
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import com.br.ipapp.BuildConfig
+import com.br.ipapp.datastore.DataStoreManager
 import com.br.ipapp.network.AuthInterceptor
 import com.br.ipapp.network.IpApi
+import com.br.ipapp.util.Constant.PREFERENCES
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -22,10 +34,10 @@ object AppDI {
 
     @Singleton
     @Provides
-    fun provideOkHttpClient(@ApplicationContext appContext: Context): OkHttpClient {
+    fun provideOkHttpClient(@ApplicationContext appContext: Context, authInterceptor:AuthInterceptor): OkHttpClient {
         val httpBuilder = OkHttpClient.Builder()
         //httpBuilder.addInterceptor(NetworkInterceptor(appContext))
-        httpBuilder.addInterceptor(AuthInterceptor())
+        httpBuilder.addInterceptor(authInterceptor)
 
         return if (BuildConfig.DEBUG) {
             val loggingInterceptor = HttpLoggingInterceptor()
@@ -59,4 +71,22 @@ object AppDI {
         return retrofit.create(IpApi::class.java)
     }
 
+    @Provides
+    @Singleton
+    fun provideAuthInterceptor(dataStoreManager:DataStoreManager):AuthInterceptor{
+        return AuthInterceptor(dataStoreManager)
+    }
+
+    @Singleton
+    @Provides
+    fun providePreferencesDataStore(@ApplicationContext appContext: Context): DataStore<Preferences> {
+        return PreferenceDataStoreFactory.create(
+            corruptionHandler = ReplaceFileCorruptionHandler(
+                produceNewData = { emptyPreferences() }
+            ),
+            migrations = listOf(SharedPreferencesMigration(appContext, PREFERENCES)),
+            scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+            produceFile = { appContext.preferencesDataStoreFile(PREFERENCES) }
+        )
+    }
 }
