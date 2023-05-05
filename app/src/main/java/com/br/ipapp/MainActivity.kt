@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.ipapp.datastore.DataStoreManager
 import com.br.ipapp.ui.theme.Ip_appTheme
+import com.br.ipapp.util.Constant.API_KEY
 import com.br.ipapp.viewmodel.HomeViewModel
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
@@ -60,10 +61,9 @@ class MainActivity : ComponentActivity() {
         remoteConfig.fetchAndActivate()
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    remoteConfig.activate()
                     val updated = task.result
-                    lifecycleScope.launch { dataStore.saveKey(task.result.toString()) }
-
+                    val key = remoteConfig.getString(API_KEY)
+                    lifecycleScope.launch { dataStore.saveKey(key) }
                     Timber.d("Config params updated: $updated")
                     Timber.d("Fetch and activate succeeded")
                 } else {
